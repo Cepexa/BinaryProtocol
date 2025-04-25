@@ -78,17 +78,25 @@ struct PacketHeader {
 };
 #pragma pack(pop)
 
-// 📌 Бинарный пакет
-struct Packet {
+struct PacketBase {
     PacketHeader header;
     std::string payload;
+    PacketBase(CommandType cmd, uint32_t req_id,const std::string& payload = {});
+    std::vector<uint8_t> toBinary() const;
+    static PacketBase fromBinary(const std::vector<uint8_t>& raw);
+};
 
-    Packet(CommandType cmd, uint32_t req_id,const std::string& payload = {});
+// 📌 Бинарный пакет
+struct PacketRequest : PacketBase{
+    PacketRequest(CommandType cmd, uint32_t req_id,const std::string& payload = {});
     void addData(SQL_Tags tag, const std::string& data);
     void addData(const std::string& data_bytes);
-    std::vector<uint8_t> toBinary() const;
-    static Packet fromBinary(const std::vector<uint8_t>& raw);
     std::string getQuery();
+};
+
+struct PacketResponse : PacketBase{
+    PacketResponse(CommandType cmd, uint32_t req_id,const std::string& payload = {});
+    static PacketResponse fromBinary(const std::vector<uint8_t>& raw);
 };
 
 // 📌 Утилиты сериализации

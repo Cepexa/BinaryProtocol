@@ -5,16 +5,55 @@
 namespace BinaryProtocol {
 
 // 📌 Конструктор пакета
-Packet::Packet(CommandType cmd, uint32_t req_id, const std::string& payload)
+PacketBase::PacketBase(CommandType cmd, uint32_t req_id, const std::string& payload)
     : header{0xABCD, 1, static_cast<uint8_t>(cmd), req_id}, payload(payload) {}
 
-void Packet::addData(SQL_Tags tag, const std::string& data)
+// 📌 Сериализация пакета в бинарный формат
+std::vector<uint8_t> PacketBase::toBinary() const {
+    std::vector<uint8_t> binary(sizeof(PacketHeader) + payload.size());
+    std::memcpy(binary.data(), &header, sizeof(PacketHeader));
+    std::memcpy(binary.data() + sizeof(PacketHeader), payload.data(), payload.size());
+    return binary;
+}
+
+// 📌 Десериализация пакета из бинарного формата
+PacketBase PacketBase::fromBinary(const std::vector<uint8_t>& raw) {
+    if (raw.size() < sizeof(PacketHeader)) {
+        throw std::runtime_error("Invalid packet size");
+    }
+    
+    PacketHeader header;
+    std::memcpy(&header, raw.data(), sizeof(PacketHeader));
+    
+    if (header.magic != 0xABCD) {
+        throw std::runtime_error("Invalid packet signature");
+    }
+
+    std::string payload(raw.begin() + sizeof(PacketHeader), raw.end());
+
+    return PacketBase(static_cast<CommandType>(header.command), header.request_id, payload);
+}
+
+PacketResponse::PacketResponse(CommandType cmd, uint32_t req_id, const std::string& payload)
+    : PacketBase::PacketBase(cmd, req_id, payload) {}
+
+PacketResponse PacketResponse::fromBinary(const std::vector<uint8_t>& raw) {
+    PacketBase base = PacketBase::fromBinary(raw);
+    return PacketResponse(static_cast<CommandType>(base.header.command), base.header.request_id, base.payload);
+}
+
+
+PacketRequest::PacketRequest(CommandType cmd, uint32_t req_id, const std::string& payload)
+    : PacketBase::PacketBase(cmd, req_id, payload) {}
+    
+
+void PacketRequest::addData(SQL_Tags tag, const std::string& data)
 {
     payload += tag;
     addData(data);
 }
 
-void Packet::addData(const std::string& data_bytes)
+void PacketRequest::addData(const std::string& data_bytes)
 {
     size_t sz = data_bytes.size();
     if (sz < 0xFF)
@@ -30,7 +69,7 @@ void Packet::addData(const std::string& data_bytes)
     payload += data_bytes;
 }
 
-std::string Packet::getQuery()
+std::string PacketRequest::getQuery()
 {
     static const std::unordered_map<uint8_t, std::string> tagNames = {
         {SELECT, "SELECT"     }, {INSERT,   "INSERT INTO"}, {UPDATE, "UPDATE"}, 
@@ -75,31 +114,7 @@ std::string Packet::getQuery()
     return result;
 }
 
-// 📌 Сериализация пакета в бинарный формат
-std::vector<uint8_t> Packet::toBinary() const {
-    std::vector<uint8_t> binary(sizeof(PacketHeader) + payload.size());
-    std::memcpy(binary.data(), &header, sizeof(PacketHeader));
-    std::memcpy(binary.data() + sizeof(PacketHeader), payload.data(), payload.size());
-    return binary;
-}
 
-// 📌 Десериализация пакета из бинарного формата
-Packet Packet::fromBinary(const std::vector<uint8_t>& raw) {
-    if (raw.size() < sizeof(PacketHeader)) {
-        throw std::runtime_error("Invalid packet size");
-    }
-    
-    PacketHeader header;
-    std::memcpy(&header, raw.data(), sizeof(PacketHeader));
-    
-    if (header.magic != 0xABCD) {
-        throw std::runtime_error("Invalid packet signature");
-    }
-
-    std::string payload(raw.begin() + sizeof(PacketHeader), raw.end());
-
-    return Packet(static_cast<CommandType>(header.command), header.request_id, payload);
-}
 
 // 📌 Кодирование строки в бинарный формат
 std::vector<uint8_t> Serializer::encodeString(const std::string& str) {
