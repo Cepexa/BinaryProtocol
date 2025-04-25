@@ -89,6 +89,7 @@ struct PacketBase {
 // 📌 Бинарный пакет
 struct PacketRequest : PacketBase{
     PacketRequest(CommandType cmd, uint32_t req_id,const std::string& payload = {});
+    static PacketRequest fromBinary(const std::vector<uint8_t>& raw);
     void addData(SQL_Tags tag, const std::string& data);
     void addData(const std::string& data_bytes);
     std::string getQuery();

@@ -46,6 +46,10 @@ PacketResponse PacketResponse::fromBinary(const std::vector<uint8_t>& raw) {
 PacketRequest::PacketRequest(CommandType cmd, uint32_t req_id, const std::string& payload)
     : PacketBase::PacketBase(cmd, req_id, payload) {}
     
+    PacketRequest PacketRequest::fromBinary(const std::vector<uint8_t>& raw) {
+        PacketBase base = PacketBase::fromBinary(raw);
+        return PacketRequest(static_cast<CommandType>(base.header.command), base.header.request_id, base.payload);
+    }
 
 void PacketRequest::addData(SQL_Tags tag, const std::string& data)
 {
