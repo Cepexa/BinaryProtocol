@@ -45,7 +45,7 @@ enum CommandType : uint8_t {
     ERROR = 0x00,
     OK = 0x01,
     SQL = 0x02,
-    SQLR = 0x03,
+    EMPTY = 0x03,
     PING = 0xFF,
 };
 
@@ -98,6 +98,7 @@ struct PacketRequest : PacketBase{
 struct PacketResponse : PacketBase{
     PacketResponse(CommandType cmd, uint32_t req_id,const std::string& payload = {});
     static PacketResponse fromBinary(const std::vector<uint8_t>& raw);
+    void addNameValue(const std::string& name, const std::string& value);
 };
 
 // 📌 Утилиты сериализации

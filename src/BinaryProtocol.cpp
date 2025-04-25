@@ -42,6 +42,9 @@ PacketResponse PacketResponse::fromBinary(const std::vector<uint8_t>& raw) {
     return PacketResponse(static_cast<CommandType>(base.header.command), base.header.request_id, base.payload);
 }
 
+void PacketResponse::addNameValue(const std::string& name, const std::string& value){
+    payload += "\x01"+name+"\x02"+value+"\x03";
+}
 
 PacketRequest::PacketRequest(CommandType cmd, uint32_t req_id, const std::string& payload)
     : PacketBase::PacketBase(cmd, req_id, payload) {}
