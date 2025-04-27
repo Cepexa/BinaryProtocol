@@ -97,8 +97,10 @@ struct PacketRequest : PacketBase{
 
 struct PacketResponse : PacketBase{
     PacketResponse(CommandType cmd, uint32_t req_id,const std::string& payload = {});
+    std::vector<uint8_t> toBinary();
     static PacketResponse fromBinary(const std::vector<uint8_t>& raw);
     void addNameValue(const std::string& name, const std::string& value);
+    void addNameValue(const std::string& name, const char* value);
 };
 
 // 📌 Утилиты сериализации

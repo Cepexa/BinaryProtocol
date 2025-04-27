@@ -16,6 +16,11 @@ std::vector<uint8_t> PacketBase::toBinary() const {
     return binary;
 }
 
+std::vector<uint8_t> PacketResponse::toBinary() {
+    payload += "\x03";
+    return PacketBase::toBinary();
+}
+
 // 📌 Десериализация пакета из бинарного формата
 PacketBase PacketBase::fromBinary(const std::vector<uint8_t>& raw) {
     if (raw.size() < sizeof(PacketHeader)) {
@@ -43,7 +48,11 @@ PacketResponse PacketResponse::fromBinary(const std::vector<uint8_t>& raw) {
 }
 
 void PacketResponse::addNameValue(const std::string& name, const std::string& value){
-    payload += "\x01"+name+"\x02"+value+"\x03";
+    payload += "\x01"+name+"\x02"+value;
+}
+
+void PacketResponse::addNameValue(const std::string& name, const char* value){
+    payload += "\x01"+name+"\x02"+value;
 }
 
 PacketRequest::PacketRequest(CommandType cmd, uint32_t req_id, const std::string& payload)
